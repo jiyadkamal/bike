@@ -20,24 +20,28 @@ if (!admin.apps.length) {
             let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim().replace(/^["'](.+)["']$/, '$1');
 
             if (privateKey) {
-                // Important: handle the escaped newlines in the private key string
-                privateKey = privateKey.replace(/\\n/g, '\n');
+                // Omni-Cleaner: Handle literal \n, escaped \\n, and double-quoting from .env/Netlify
+                privateKey = privateKey
+                    .replace(/^["']|["']$/g, '') // Strip wrapping quotes
+                    .replace(/\\n/g, '\n')      // Convert literal \n sequence to newlines
+                    .trim();
             }
 
             console.log('FIREBASE_PROJECT_ID:', projectId ? 'SET' : 'MISSING');
             console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? 'SET' : 'MISSING');
             console.log('FIREBASE_PRIVATE_KEY:', privateKey ? 'SET' : 'MISSING');
 
+            // Firebase SDK cert() expects camelCase for object properties
             serviceAccount = {
-                project_id: projectId,
-                client_email: clientEmail,
-                private_key: privateKey
+                projectId: projectId,
+                clientEmail: clientEmail,
+                privateKey: privateKey
             };
 
             const missing = [];
-            if (!serviceAccount.project_id) missing.push('FIREBASE_PROJECT_ID');
-            if (!serviceAccount.client_email) missing.push('FIREBASE_CLIENT_EMAIL');
-            if (!serviceAccount.private_key) missing.push('FIREBASE_PRIVATE_KEY');
+            if (!serviceAccount.projectId) missing.push('FIREBASE_PROJECT_ID');
+            if (!serviceAccount.clientEmail) missing.push('FIREBASE_CLIENT_EMAIL');
+            if (!serviceAccount.privateKey) missing.push('FIREBASE_PRIVATE_KEY');
 
             if (missing.length > 0) {
                 throw new Error(`Firebase credentials incomplete. Missing: ${missing.join(', ')}`);
@@ -46,7 +50,7 @@ if (!admin.apps.length) {
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            databaseURL: `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`
+            databaseURL: `https://${serviceAccount.projectId || serviceAccount.project_id}-default-rtdb.firebaseio.com`
         });
         console.log('✅ Firebase Admin initialized successfully');
     } catch (error) {
