@@ -14,31 +14,31 @@ if (!admin.apps.length) {
         } else {
             console.log('🔍 Checking granular Firebase environment variables...');
 
-            // Priority: FIREBASE_ADMIN_* keys; Fallback: FIREBASE_* keys
-            const projectId = (process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.FIREBASE_PROJECT_ID)?.trim().replace(/^["']|["']$/g, '');
-            const clientEmail = (process.env.FIREBASE_ADMIN_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL)?.trim().replace(/^["']|["']$/g, '');
-            let privateKey = (process.env.FIREBASE_ADMIN_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)?.trim();
-
             if (privateKey) {
-                // INDUSTRIAL STRENGTH PEM CLEANER
-                // 1. Purge all artifacts (quotes, escaped \n, boundaries, and whitespace)
-                let base64Core = privateKey
-                    .replace(/^["']|["']$/g, '')                                 // Strip wrapping quotes
-                    .replace(/\\n/g, '\n')                                       // Convert literal \n to newlines
-                    .replace(/-----\s*BEGIN[^-]*PRIVATE KEY\s*-----/i, '')       // Flex-remove prefix
-                    .replace(/-----\s*END[^-]*PRIVATE KEY\s*-----/i, '')         // Flex-remove suffix
-                    .replace(/\s/g, '');                                         // Purge ALL internal whitespace
+                // SURGICAL DIAGNOSTICS
+                console.log('FB_RAW_PK_PREFIX:', privateKey.substring(0, 30));
+                console.log('FB_RAW_PK_SUFFIX:', privateKey.substring(privateKey.length - 30));
 
-                // 2. Re-wrap into standard 64-character segments
-                const segments = base64Core.match(/.{1,64}/g) || [];
+                // ULTIMATE PEM NORMALIZATION
+                // 1. Extract raw base64 data regardless of how it's escaped or quoted
+                let base64Only = privateKey
+                    .replace(/-----\s*BEGIN[^-]*PRIVATE KEY\s*-----/i, '')
+                    .replace(/-----\s*END[^-]*PRIVATE KEY\s*-----/i, '')
+                    .replace(/\\n/g, '')  // Remove literal \n
+                    .replace(/\n/g, '')    // Remove real newlines
+                    .replace(/\s/g, '')    // Remove all whitespace
+                    .replace(/["']/g, '')   // Remove all quotes
+                    .trim();
 
-                // 3. Re-assemble perfect PEM structure
-                privateKey = `-----BEGIN PRIVATE KEY-----\n${segments.join('\n')}\n-----END PRIVATE KEY-----\n`;
+                // 2. Reconstruct from scratch
+                const chunks = base64Only.match(/.{1,64}/g) || [];
+                privateKey = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----\n`;
             }
 
-            console.log('FIREBASE_PROJECT_ID:', projectId ? 'SET' : 'MISSING');
-            console.log('FIREBASE_PRIVATE_KEY Length:', privateKey ? privateKey.length : '0');
-            console.log('FIREBASE_PRIVATE_KEY Valid Bound:', privateKey?.startsWith('-----BEGIN') ? 'TRUE' : 'FALSE');
+            console.log('FB_PROJECT:', projectId ? 'SET' : 'MISSING');
+            console.log('FB_EMAIL:', clientEmail ? 'SET' : 'MISSING');
+            console.log('FB_PK_LEN:', privateKey ? privateKey.length : '0');
+            console.log('FB_PK_BOUND:', privateKey?.startsWith('-----BEGIN') ? 'TRUE' : 'FALSE');
 
             // Provide BOTH snake_case and camelCase to satisfy all SDK versions
             serviceAccount = {
