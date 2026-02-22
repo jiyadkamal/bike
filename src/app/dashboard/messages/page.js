@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Shield, MessageSquare, Zap, Activity, Clock, User, ChevronRight } from 'lucide-react';
+import { Send, Shield, MessageSquare, Zap, Activity, Clock, User, Users, ChevronRight } from 'lucide-react';
 
 export default function MessagesPage() {
     const { user } = useAuth();
