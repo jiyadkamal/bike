@@ -7,7 +7,7 @@ if (!admin.apps.length) {
         let serviceAccount;
         const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-        if (serviceAccountRaw) {
+        if (serviceAccountRaw && serviceAccountRaw.trim().length > 10) {
             // Support for the legacy JSON blob
             serviceAccount = JSON.parse(serviceAccountRaw.replace(/\\n/g, "\\\\n").replace(/\n/g, "\\n"));
             serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
@@ -20,16 +20,19 @@ if (!admin.apps.length) {
             let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim().replace(/^["'](.+)["']$/, '$1');
 
             if (privateKey) {
-                // Omni-Cleaner: Handle literal \n, escaped \\n, and double-quoting from .env/Netlify
-                privateKey = privateKey
-                    .replace(/^["']|["']$/g, '') // Strip wrapping quotes
-                    .replace(/\\n/g, '\n')      // Convert literal \n sequence to newlines
-                    .trim();
+                // Progressive Un-escaping: Handle double-escaping that often happens in Netlify/Next.js
+                // 1. Strip external quotes
+                privateKey = privateKey.replace(/^["']|["']$/g, '');
+                // 2. Convert literal \n strings to real newlines (run multiple times for deep escaping)
+                privateKey = privateKey.replace(/\\n/g, '\n').replace(/\\n/g, '\n');
+                // 3. Ensure no trailing/leading whitespace per line
+                privateKey = privateKey.split('\n').map(line => line.trim()).join('\n');
             }
 
             console.log('FIREBASE_PROJECT_ID:', projectId ? 'SET' : 'MISSING');
             console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? 'SET' : 'MISSING');
-            console.log('FIREBASE_PRIVATE_KEY:', privateKey ? 'SET' : 'MISSING');
+            console.log('FIREBASE_PRIVATE_KEY Length:', privateKey ? privateKey.length : '0');
+            console.log('FIREBASE_PRIVATE_KEY Prefix:', privateKey ? privateKey.substring(0, 27) : 'NONE');
 
             // Firebase SDK cert() expects camelCase for object properties
             serviceAccount = {
