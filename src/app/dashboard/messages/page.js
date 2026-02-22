@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Shield, MessageSquare, Zap, Activity, Clock, User, Users, ChevronRight } from 'lucide-react';
+import { Send, MessageSquare, Clock, Users } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MessagesPage() {
     const { user } = useAuth();
@@ -70,68 +71,73 @@ export default function MessagesPage() {
     function formatDate(ts) { return new Date(ts).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }); }
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-            <div className="w-12 h-12 border-4 border-white/10 border-t-accent rounded-full animate-spin" />
-            <p className="text-text-muted font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Establishing Uplink</p>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+            <div style={{ width: 40, height: 40, border: '4px solid #e5e7eb', borderTop: '4px solid #ff6b00', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 
     if (allOrgs.length === 0) return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20 px-8 glass-effect rounded-[32px] border border-white/10 max-w-2xl mx-auto mt-12"
-        >
-            <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
-                <MessageSquare className="w-10 h-10 text-text-muted" />
-            </div>
-            <h3 className="text-3xl font-black text-white heading-pro tracking-tighter mb-4 uppercase">NO CHANNELS FOUND</h3>
-            <p className="text-text-secondary leading-relaxed mb-10 italic">
-                You are not currently assigned to any communication sectors. Join an organization to initialize tactical comms.
-            </p>
-            <Link href="/dashboard/explore" className="btn-pro inline-flex items-center gap-2">
-                Scan Available Nodes
+        <div style={{ textAlign: 'center', padding: '80px 0', background: '#fff', borderRadius: 20, border: '1px solid #e5e7eb' }}>
+            <MessageSquare style={{ width: 56, height: 56, color: '#e5e7eb', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>No Messages Yet</h3>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20 }}>Join an organization to start messaging.</p>
+            <Link href="/dashboard/explore" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 22px', background: 'linear-gradient(135deg, #ff6b00, #ff8533)',
+                color: '#fff', borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: 'none',
+            }}>
+                Explore Organizations
             </Link>
-        </motion.div>
+        </div>
     );
 
     const selectedOrg = allOrgs.find(o => o.id === selectedOrgId);
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-160px)] pb-12">
-            {/* Sector Selector Sidebar */}
-            <div className="w-full lg:w-80 flex-shrink-0 flex flex-col space-y-4">
-                <div className="flex items-center justify-between px-2">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted opacity-60">Tactical Sectors</h3>
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[9px] font-bold text-emerald-500/80 uppercase tracking-widest">Active Links</span>
-                    </div>
+        <div style={{ fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', gap: 24, height: 'calc(100vh - 130px)' }}>
+            {/* Sidebar: Org Selector */}
+            <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conversations</h3>
                 </div>
-
-                <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto' }}>
                     {allOrgs.map(o => (
                         <div
                             key={o.id}
                             onClick={() => setSelectedOrgId(o.id)}
-                            className={`
-                                group p-5 rounded-2xl border transition-all duration-300 cursor-pointer relative overflow-hidden
-                                ${selectedOrgId === o.id
-                                    ? 'glass-effect border-accent/50 bg-accent/5'
-                                    : 'border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10'}
-                            `}
+                            style={{
+                                padding: '14px 16px',
+                                background: selectedOrgId === o.id ? '#fff' : 'transparent',
+                                borderRadius: 12,
+                                border: selectedOrgId === o.id ? '1px solid #eee' : '1px solid transparent',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: selectedOrgId === o.id ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                                position: 'relative',
+                            }}
+                            onMouseEnter={e => { if (selectedOrgId !== o.id) e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                            onMouseLeave={e => { if (selectedOrgId !== o.id) e.currentTarget.style.background = 'transparent'; }}
                         >
                             {selectedOrgId === o.id && (
-                                <motion.div
-                                    layoutId="active-chat-signal"
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-accent rounded-r-full shadow-[0_0_10px_#ff6b00]"
-                                />
+                                <div style={{
+                                    position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                                    width: 3, height: 24, background: '#ff6b00', borderRadius: '0 4px 4px 0',
+                                }} />
                             )}
-                            <div className="relative z-10">
-                                <p className={`text-sm font-black uppercase tracking-widest ${selectedOrgId === o.id ? 'text-accent' : 'text-white group-hover:text-white/90'}`}>{o.name}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Activity className="w-3 h-3 text-text-muted group-hover:text-accent transition-colors" />
-                                    <p className="text-[10px] text-text-muted font-bold italic">{o.state}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{
+                                    width: 40, height: 40, borderRadius: 12,
+                                    background: selectedOrgId === o.id ? 'linear-gradient(135deg, #ff6b00, #ff8533)' : '#f0f0f0',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: selectedOrgId === o.id ? '#fff' : '#9ca3af', fontWeight: 700, fontSize: 16,
+                                    transition: 'all 0.2s',
+                                }}>
+                                    {o.name?.charAt(0)?.toUpperCase()}
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: 14, fontWeight: selectedOrgId === o.id ? 700 : 500, color: selectedOrgId === o.id ? '#1a1a2e' : '#6b7280' }}>{o.name}</p>
+                                    <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{o.state}</p>
                                 </div>
                             </div>
                         </div>
@@ -139,150 +145,160 @@ export default function MessagesPage() {
                 </div>
             </div>
 
-            {/* Tactical Comms Area */}
-            <div className="flex-1 flex flex-col space-y-6">
-                <div className="flex items-center justify-between">
+            {/* Main Chat Area */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Chat Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                        background: '#fff', borderRadius: '20px 20px 0 0', padding: '18px 24px',
+                        border: '1px solid rgba(229,231,235,0.5)', borderBottom: 'none',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}
+                >
                     <div>
-                        <h2 className="text-2xl font-black text-white heading-pro tracking-tighter uppercase">{selectedOrg?.name || 'INITIALIZING...'}</h2>
-                        <div className="flex items-center gap-3 mt-1">
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                                <Users className="w-3 h-3 text-accent" />
-                                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{selectedOrg?.members?.length || 0} Operatives</span>
-                            </div>
-                            <span className="text-[10px] text-text-secondary italic font-medium opacity-60">Sector link established. Comms secured.</span>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>{selectedOrg?.name || 'Select a Conversation'}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <Users style={{ width: 14, height: 14, color: '#9ca3af' }} />
+                            <span style={{ fontSize: 13, color: '#9ca3af' }}>{selectedOrg?.memberCount || 0} members</span>
                         </div>
                     </div>
-                    <div className="hidden sm:flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Network Speed</p>
-                            <p className="text-xs font-bold text-white">480 TB/S</p>
-                        </div>
-                        <Zap className="w-5 h-5 text-accent animate-pulse" />
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '6px 12px', background: '#ecfdf5', borderRadius: 20,
+                    }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>Active</span>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="pro-card flex-1 flex flex-col p-0 overflow-hidden border-white/10 relative">
-                    {/* Immersive background decoration */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent pointer-events-none" />
-                    <div className="absolute top-0 right-0 p-12 text-white/5 pointer-events-none">
-                        <Shield size={320} strokeWidth={1} />
-                    </div>
+                {/* Messages Area */}
+                <div style={{
+                    flex: 1, background: '#fff', overflowY: 'auto', padding: '24px 24px 16px',
+                    borderLeft: '1px solid rgba(229,231,235,0.5)', borderRight: '1px solid rgba(229,231,235,0.5)',
+                }}>
+                    <AnimatePresence initial={false}>
+                        {messages.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.5 }}
+                            >
+                                <MessageSquare style={{ width: 56, height: 56, color: '#e5e7eb', marginBottom: 16 }} />
+                                <p style={{ fontSize: 16, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>No messages yet</p>
+                                <p style={{ fontSize: 13, color: '#d1d5db' }}>Be the first to send a message!</p>
+                            </motion.div>
+                        ) : (
+                            messages.map((msg, i) => {
+                                const isOwn = msg.senderId === user?.uid;
+                                const isAdmin = msg.senderRole === 'admin';
+                                const showDate = i === 0 || formatDate(msg.timestamp) !== formatDate(messages[i - 1]?.timestamp);
 
-                    {/* Messages Window */}
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar relative z-10">
-                        <AnimatePresence initial={false}>
-                            {messages.length === 0 ? (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center justify-center h-full space-y-4 opacity-30"
-                                >
-                                    <MessageSquare size={64} className="text-accent" />
-                                    <p className="text-xs font-black uppercase tracking-[0.4em] text-white">Signal Silence</p>
-                                    <p className="text-[10px] italic text-text-muted">Broadcast your first message to this sector.</p>
-                                </motion.div>
-                            ) : (
-                                messages.map((msg, i) => {
-                                    const isOwn = msg.senderId === user?.uid;
-                                    const isAdmin = msg.senderRole === 'admin';
-                                    const showDate = i === 0 || formatDate(msg.timestamp) !== formatDate(messages[i - 1]?.timestamp);
+                                return (
+                                    <motion.div
+                                        key={msg.id || i}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ marginBottom: 20 }}
+                                    >
+                                        {showDate && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '16px 0' }}>
+                                                <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
+                                                <span style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{formatDate(msg.timestamp)}</span>
+                                                <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
+                                            </div>
+                                        )}
 
-                                    return (
-                                        <motion.div
-                                            key={msg.id || i}
-                                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            className="space-y-4"
-                                        >
-                                            {showDate && (
-                                                <div className="flex items-center gap-6 py-4">
-                                                    <div className="h-px flex-1 bg-white/5" />
-                                                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] italic">{formatDate(msg.timestamp)}</span>
-                                                    <div className="h-px flex-1 bg-white/5" />
+                                        <div style={{ display: 'flex', justifyContent: isOwn ? 'flex-end' : 'flex-start' }}>
+                                            <div style={{ maxWidth: '70%', display: 'flex', flexDirection: isOwn ? 'row-reverse' : 'row', gap: 12, alignItems: 'flex-end' }}>
+                                                {/* Avatar */}
+                                                <div style={{
+                                                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                                                    background: isOwn ? 'linear-gradient(135deg, #ff6b00, #ff8533)' : '#f0f0f0',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: isOwn ? '#fff' : '#9ca3af', fontWeight: 700, fontSize: 13,
+                                                }}>
+                                                    {msg.senderName?.charAt(0)?.toUpperCase()}
                                                 </div>
-                                            )}
 
-                                            <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group/msg`}>
-                                                <div className={`max-w-[80%] flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} gap-4 items-end`}>
-                                                    {/* Avatar / Designation Initials */}
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shadow-lg transition-transform group-hover/msg:scale-110 ${isOwn ? 'orange-gradient text-white ml-2' : 'bg-white/5 border border-white/10 text-white/60 mr-2'}`}>
-                                                        {msg.senderName?.charAt(0)?.toUpperCase()}
+                                                <div>
+                                                    {/* Name + Time */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexDirection: isOwn ? 'row-reverse' : 'row' }}>
+                                                        <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a2e' }}>
+                                                            {isOwn ? 'You' : msg.senderName}
+                                                        </span>
+                                                        {isAdmin && (
+                                                            <span style={{
+                                                                fontSize: 10, fontWeight: 700, padding: '2px 6px',
+                                                                background: '#fff7ed', color: '#ff6b00', borderRadius: 6,
+                                                            }}>Admin</span>
+                                                        )}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <Clock style={{ width: 11, height: 11, color: '#d1d5db' }} />
+                                                            <span style={{ fontSize: 11, color: '#d1d5db' }}>{formatTime(msg.timestamp)}</span>
+                                                        </div>
                                                     </div>
 
-                                                    <div className={`space-y-1.5 ${isOwn ? 'text-right' : 'text-left'}`}>
-                                                        <div className={`flex items-center gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">{isOwn ? 'OPERATIVE (YOU)' : msg.senderName}</span>
-                                                            {isAdmin && (
-                                                                <span className="flex items-center gap-1 text-[8px] font-black bg-accent/20 text-accent border border-accent/30 px-1.5 py-0.5 rounded shadow-[0_0_8px_#ff6b0033]">
-                                                                    <Shield className="w-2 h-2" /> SECTOR AUTH
-                                                                </span>
-                                                            )}
-                                                            <div className="flex items-center gap-1.5 opacity-40">
-                                                                <Clock className="w-2.5 h-2.5" />
-                                                                <span className="text-[9px] font-bold">{formatTime(msg.timestamp)}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className={`
-                                                            p-4 rounded-2xl text-sm leading-relaxed border transition-all
-                                                            ${isOwn
-                                                                ? 'bg-accent/5 border-accent/40 text-white rounded-tr-none'
-                                                                : 'glass-effect border-white/10 text-text-secondary rounded-tl-none group-hover/msg:border-white/20'}
-                                                        `}>
-                                                            {msg.text}
-                                                        </div>
+                                                    {/* Message Bubble */}
+                                                    <div style={{
+                                                        padding: '10px 16px',
+                                                        borderRadius: isOwn ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                                        background: isOwn ? 'linear-gradient(135deg, #ff6b00, #ff8533)' : '#f5f6fa',
+                                                        color: isOwn ? '#fff' : '#374151',
+                                                        fontSize: 14, lineHeight: 1.6,
+                                                        boxShadow: isOwn ? '0 2px 8px rgba(255,107,0,0.2)' : 'none',
+                                                    }}>
+                                                        {msg.text}
                                                     </div>
                                                 </div>
                                             </div>
-                                        </motion.div>
-                                    );
-                                })
-                            )}
-                        </AnimatePresence>
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Tactical Input Terminal */}
-                    <form onSubmit={handleSend} className="p-6 bg-black/40 border-t border-white/5 relative z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                        <div className="relative group/input">
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={e => setNewMessage(e.target.value)}
-                                placeholder="Transmit data to sector..."
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-20 text-white font-medium placeholder:text-white/20 focus:border-accent/50 outline-none transition-all focus:bg-white/[0.07]"
-                                onFocus={e => e.target.placeholder = "Awaiting input command..."}
-                                onBlur={e => e.target.placeholder = "Transmit data to sector..."}
-                            />
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                <button
-                                    type="submit"
-                                    disabled={sending || !newMessage.trim()}
-                                    className={`
-                                        w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-90
-                                        ${(sending || !newMessage.trim())
-                                            ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                                            : 'orange-gradient text-white shadow-lg shadow-accent/20 hover:scale-105'}
-                                    `}
-                                >
-                                    <Send size={18} className={sending ? 'animate-pulse' : ''} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="mt-3 flex items-center gap-4 px-2">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                                <span className="text-[8px] font-black text-text-muted uppercase tracking-[0.2em]">Ready to broadcast</span>
-                            </div>
-                            <div className="h-px flex-1 bg-white/5" />
-                            <p className="text-[8px] font-bold text-text-muted italic">Encryption active (AES-256-GCM)</p>
-                        </div>
-                    </form>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })
+                        )}
+                    </AnimatePresence>
+                    <div ref={messagesEndRef} />
                 </div>
+
+                {/* Input Area */}
+                <form onSubmit={handleSend} style={{
+                    background: '#fff', padding: '16px 24px',
+                    borderRadius: '0 0 20px 20px',
+                    border: '1px solid rgba(229,231,235,0.5)', borderTop: '1px solid #f0f0f0',
+                }}>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            placeholder="Type a message..."
+                            style={{
+                                flex: 1, padding: '14px 18px', background: '#f5f6fa',
+                                borderRadius: 14, fontSize: 14, border: '2px solid transparent',
+                                outline: 'none', color: '#1a1a2e', transition: 'all 0.2s',
+                            }}
+                            onFocus={e => { e.target.style.borderColor = '#ff6b00'; e.target.style.background = '#fff'; }}
+                            onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = '#f5f6fa'; }}
+                        />
+                        <button
+                            type="submit"
+                            disabled={sending || !newMessage.trim()}
+                            style={{
+                                width: 48, height: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.2s',
+                                background: (sending || !newMessage.trim()) ? '#f0f0f0' : 'linear-gradient(135deg, #ff6b00, #ff8533)',
+                                color: (sending || !newMessage.trim()) ? '#d1d5db' : '#fff',
+                                boxShadow: (sending || !newMessage.trim()) ? 'none' : '0 4px 12px rgba(255,107,0,0.25)',
+                            }}
+                        >
+                            <Send style={{ width: 18, height: 18 }} />
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
 }
-
-// Sub-component for Link to avoid import error if Link is not imported (assuming it is available or needs import)
-import Link from 'next/link';
