@@ -15,6 +15,8 @@ export default function ExplorePage() {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
 
+    const [selectedState, setSelectedState] = useState('');
+
     useEffect(() => { fetchOrganizations(); }, []);
 
     async function fetchOrganizations() {
@@ -25,15 +27,34 @@ export default function ExplorePage() {
         finally { setLoading(false); }
     }
 
-    async function handleJoin(orgId) {
+    // Get unique states for the filter
+    const uniqueStates = [...new Set(organizations.map(o => o.state).filter(Boolean))].sort();
+
+    async function handleJoin(orgId, useCode) {
         try {
-            await api.post(`/api/organizations/${orgId}/join`, { joiningCode: joinCode });
-            setMessage('Join request sent successfully!');
-            setJoinOrgId(null); setJoinCode('');
-        } catch (err) { setMessage(err.response?.data?.error || 'Join failed'); }
+            const data = { joiningCode: useCode ? joinCode : null };
+            const res = await api.post(`/api/organizations/${orgId}/join`, data);
+
+            if (res.data.direct) {
+                setMessage('Successfully joined the organization!');
+                // Wait briefly then refresh to show new org in sidebar
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                setMessage('Join request sent successfully! Awaiting admin approval.');
+            }
+
+            setJoinOrgId(null);
+            setJoinCode('');
+        } catch (err) {
+            setMessage(err.response?.data?.error || 'Join failed');
+        }
     }
 
-    const filtered = organizations.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
+    const filtered = organizations.filter(o => {
+        const matchesName = o.name.toLowerCase().includes(search.toLowerCase());
+        const matchesState = selectedState === '' || o.state === selectedState;
+        return matchesName && matchesState;
+    });
 
     return (
         <div style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -42,15 +63,35 @@ export default function ExplorePage() {
                 <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Find and join biker communities near you</p>
             </div>
 
-            <div style={{ position: 'relative', maxWidth: 400, marginBottom: 24 }}>
-                <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: '#9ca3af' }} />
-                <input
-                    type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search organizations..."
-                    style={{ width: '100%', paddingLeft: 44, paddingRight: 16, paddingTop: 12, paddingBottom: 12, background: '#fff', borderRadius: 14, fontSize: 14, border: '1px solid #e5e7eb', outline: 'none', color: '#1a1a2e' }}
-                    onFocus={e => { e.target.style.borderColor = '#ff6b00'; e.target.style.boxShadow = '0 0 0 3px rgba(255,107,0,0.1)'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
-                />
+            <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', maxWidth: 400, flex: 1 }}>
+                    <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: '#9ca3af' }} />
+                    <input
+                        type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search organizations..."
+                        style={{ width: '100%', paddingLeft: 44, paddingRight: 16, paddingTop: 12, paddingBottom: 12, background: '#fff', borderRadius: 14, fontSize: 14, border: '1px solid #e5e7eb', outline: 'none', color: '#1a1a2e' }}
+                        onFocus={e => { e.target.style.borderColor = '#ff6b00'; e.target.style.boxShadow = '0 0 0 3px rgba(255,107,0,0.1)'; }}
+                        onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#6b7280' }}>Filter by State:</label>
+                    <select
+                        value={selectedState}
+                        onChange={(e) => setSelectedState(e.target.value)}
+                        style={{
+                            padding: '12px 16px', borderRadius: 14, border: '1px solid #e5e7eb',
+                            background: '#fff', fontSize: 14, fontWeight: 500, color: '#1a1a2e',
+                            outline: 'none', cursor: 'pointer', minWidth: 160
+                        }}
+                    >
+                        <option value="">All States</option>
+                        {uniqueStates.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {message && (
@@ -95,23 +136,31 @@ export default function ExplorePage() {
                             )}
 
                             {joinOrgId === org.id ? (
-                                <div>
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
                                     <input type="text" value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter joining code"
                                         style={{ width: '100%', padding: '10px 14px', background: '#f5f6fa', borderRadius: 10, fontSize: 13, border: '2px solid transparent', outline: 'none', color: '#1a1a2e', marginBottom: 8 }}
                                         onFocus={e => e.target.style.borderColor = '#ff6b00'} onBlur={e => e.target.style.borderColor = 'transparent'}
                                     />
                                     <div style={{ display: 'flex', gap: 8 }}>
-                                        <button onClick={() => handleJoin(org.id)} style={{ flex: 1, padding: 10, background: 'linear-gradient(135deg, #ff6b00, #ff8533)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Confirm</button>
+                                        <button onClick={() => handleJoin(org.id, true)} style={{ flex: 1, padding: 10, background: 'linear-gradient(135deg, #ff6b00, #ff8533)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Confirm Code</button>
                                         <button onClick={() => { setJoinOrgId(null); setJoinCode(''); }} style={{ padding: '10px 16px', background: '#f5f6fa', borderRadius: 10, color: '#6b7280', fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}>Cancel</button>
                                     </div>
-                                </div>
+                                </motion.div>
                             ) : (
-                                <button onClick={() => setJoinOrgId(org.id)}
-                                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 11, background: '#fff7ed', color: '#ff6b00', borderRadius: 12, fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = '#ffedd5'} onMouseLeave={e => e.currentTarget.style.background = '#fff7ed'}
-                                >
-                                    Request to Join <ArrowRight style={{ width: 16, height: 16 }} />
-                                </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <button onClick={() => setJoinOrgId(org.id)}
+                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 11, background: 'linear-gradient(135deg, #ff6b00, #ff8533)', color: '#fff', borderRadius: 12, fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}
+                                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,107,0,0.2)'} onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                                    >
+                                        Join with Code
+                                    </button>
+                                    <button onClick={() => handleJoin(org.id, false)}
+                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 11, background: '#fff7ed', color: '#ff6b00', borderRadius: 12, fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}
+                                        onMouseEnter={e => e.currentTarget.style.background = '#ffedd5'} onMouseLeave={e => e.currentTarget.style.background = '#fff7ed'}
+                                    >
+                                        Request Access
+                                    </button>
+                                </div>
                             )}
                         </motion.div>
                     ))}
